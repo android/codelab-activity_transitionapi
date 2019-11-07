@@ -2,7 +2,9 @@ package com.example.android.common.logger;
 
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -44,15 +46,15 @@ public class LogFragment extends Fragment {
         mLogView.setCompoundDrawablePadding(paddingPixels);
 
         mLogView.setGravity(Gravity.BOTTOM);
-        mLogView.setTextAppearance(getActivity(),
-                android.R.style.TextAppearance_DeviceDefault_Medium);
+
+        mLogView.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
 
         mScrollView.addView(mLogView);
         return mScrollView;
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View result = inflateViews();
