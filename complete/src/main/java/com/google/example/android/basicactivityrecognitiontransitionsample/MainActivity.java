@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -137,7 +138,10 @@ public class MainActivity extends AppCompatActivity {
         // The receiver listens for the PendingIntent above that is triggered by the system when an
         // activity transition occurs.
         mTransitionsReceiver = new TransitionsReceiver();
-        registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mTransitionsReceiver,
+                new IntentFilter(TRANSITIONS_RECEIVER_ACTION)
+        );
 
         printToScreen("App initialized.");
     }
@@ -158,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: Unregister activity transition receiver when user leaves the app.
         if (mTransitionsReceiver != null) {
-            unregisterReceiver(mTransitionsReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mTransitionsReceiver);
             mTransitionsReceiver = null;
         }
         super.onStop();
