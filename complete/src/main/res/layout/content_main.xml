@@ -32,9 +32,15 @@
         <fragment
             android:name="com.example.android.common.logger.LogFragment"
             android:id="@+id/log_fragment"
+            android:layout_weight="4"
+            android:layout_width="match_parent"
+            android:layout_height="0dp" />
+        <Button
             android:layout_weight="1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="0dp"
+            android:text="@string/enable_disable_button_activity_recognition"
+            android:onClick="onClickEnableOrDisableActivityRecognition" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

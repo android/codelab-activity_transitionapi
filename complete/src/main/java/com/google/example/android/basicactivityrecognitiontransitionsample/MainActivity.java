@@ -15,17 +15,22 @@
  */
 package com.google.example.android.basicactivityrecognitiontransitionsample;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 
 import com.example.android.common.logger.LogFragment;
 import com.google.android.gms.location.ActivityRecognition;
@@ -45,15 +50,26 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Sample application which requests Activity recognition transitions.
+ * Demos enabling/disabling Activity Recognition transitions, e.g., starting or stopping a walk,
+ * run, drive, etc.).
  */
 public class MainActivity extends AppCompatActivity {
 
-    private final String TAG = getClass().getSimpleName();
-    // The intent action which will be fired when transitions are triggered.
+    private final static String TAG = "MainActivity";
+
+    // TODO: Review check for devices with Android 10 (29+).
+    private boolean runningQOrLater =
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q;
+
+    private boolean activityTrackingEnabled;
+
+    private List<ActivityTransition> activityTransitionList;
+
+    // Action fired when transitions are triggered.
     private final String TRANSITIONS_RECEIVER_ACTION =
             BuildConfig.APPLICATION_ID + "TRANSITIONS_RECEIVER_ACTION";
-    private PendingIntent mPendingIntent;
+
+    private PendingIntent mActivityTransitionsPendingIntent;
     private TransitionsReceiver mTransitionsReceiver;
     private LogFragment mLogFragment;
 
@@ -82,47 +98,65 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mLogFragment =
+                (LogFragment) getSupportFragmentManager().findFragmentById(R.id.log_fragment);
 
+        activityTrackingEnabled = false;
+
+        // List of activity transitions to track.
+        activityTransitionList = new ArrayList<>();
+
+        // TODO: Add activity transitions to track.
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+
+        // TODO: Initialize PendingIntent that will be triggered when a activity transition occurs.
         Intent intent = new Intent(TRANSITIONS_RECEIVER_ACTION);
-        mPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+        mActivityTransitionsPendingIntent =
+                PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
+        // TODO: Create and register a BroadcastReceiver to listen for activity transitions.
+        // The receiver listens for the PendingIntent above that is triggered by the system when an
+        // activity transition occurs.
         mTransitionsReceiver = new TransitionsReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
 
-        mLogFragment = (LogFragment) getSupportFragmentManager().findFragmentById(R.id.log_fragment);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        setupActivityTransitions();
+        printToScreen("App initialized.");
     }
 
     @Override
     protected void onPause() {
-        // Unregister the transitions:
-        ActivityRecognition.getClient(this).removeActivityTransitionUpdates(mPendingIntent)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Transitions successfully unregistered.");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Transitions could not be unregistered: " + e);
-                    }
-                });
 
+        // TODO: Disable activity transitions when user leaves the app.
+        if (activityTrackingEnabled) {
+            disableActivityTransitions();
+        }
         super.onPause();
     }
 
+
     @Override
     protected void onStop() {
+
+        // TODO: Unregister activity transition receiver when user leaves the app.
         if (mTransitionsReceiver != null) {
             unregisterReceiver(mTransitionsReceiver);
             mTransitionsReceiver = null;
@@ -131,76 +165,140 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Sets up {@link ActivityTransitionRequest}'s for the sample app, and registers callbacks for them
-     * with a custom {@link BroadcastReceiver}
+     * Registers callbacks for {@link ActivityTransition} events via a custom
+     * {@link BroadcastReceiver}
      */
-    private void setupActivityTransitions() {
-        List<ActivityTransition> transitions = new ArrayList<>();
-        transitions.add(
-                new ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.WALKING)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                        .build());
-        transitions.add(
-                new ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.WALKING)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                        .build());
-        transitions.add(
-                new ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.STILL)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                        .build());
-        transitions.add(
-                new ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.STILL)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                        .build());
-        ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
+    private void enableActivityTransitions() {
+
+        Log.d(TAG, "enableActivityTransitions()");
+
+
+        // TODO: Create request and listen for activity changes.
+        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
 
         // Register for Transitions Updates.
         Task<Void> task =
                 ActivityRecognition.getClient(this)
-                        .requestActivityTransitionUpdates(request, mPendingIntent);
+                        .requestActivityTransitionUpdates(request, mActivityTransitionsPendingIntent);
+
+
         task.addOnSuccessListener(
                 new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void result) {
-                        Log.i(TAG, "Transitions Api was successfully registered.");
+                        activityTrackingEnabled = true;
+                        printToScreen("Transitions Api was successfully registered.");
+
                     }
                 });
         task.addOnFailureListener(
                 new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Transitions Api could not be registered: " + e);
+                        printToScreen("Transitions Api could NOT be registered: " + e);
+                        Log.e(TAG, "Transitions Api could NOT be registered: " + e);
+
+                    }
+                });
+    }
+
+
+    /**
+     * Unregisters callbacks for {@link ActivityTransition} events via a custom
+     * {@link BroadcastReceiver}
+     */
+    private void disableActivityTransitions() {
+
+        Log.d(TAG, "disableActivityTransitions()");
+
+
+        // TODO: Stop listening for activity changes.
+        ActivityRecognition.getClient(this).removeActivityTransitionUpdates(mActivityTransitionsPendingIntent)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        activityTrackingEnabled = false;
+                        printToScreen("Transitions successfully unregistered.");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        printToScreen("Transitions could not be unregistered: " + e);
+                        Log.e(TAG,"Transitions could not be unregistered: " + e);
                     }
                 });
     }
 
     /**
-     * A basic BroadcastReceiver to handle intents from from the Transitions API.
+     * On devices Android 10 and beyond (29+), you need to ask for the ACTIVITY_RECOGNITION via the
+     * run-time permissions.
+     */
+    private boolean activityRecognitionPermissionApproved() {
+
+        // TODO: Review permission check for 29+.
+        if (runningQOrLater) {
+
+            return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACTIVITY_RECOGNITION
+            );
+        } else {
+            return true;
+        }
+    }
+
+    public void onClickEnableOrDisableActivityRecognition(View view) {
+
+        // TODO: Enable/Disable activity tracking and ask for permissions if needed.
+        if (activityRecognitionPermissionApproved()) {
+
+            // TODO: Add requests for activity tracking.
+            if (activityTrackingEnabled) {
+                disableActivityTransitions();
+
+            } else {
+                enableActivityTransitions();
+            }
+
+        } else {
+            Intent startIntent = new Intent(this, PermissionRationalActivity.class);
+            startActivity(startIntent);
+        }
+    }
+
+    private void printToScreen(@NonNull String message) {
+        mLogFragment.getLogView().println(message);
+        Log.d(TAG, message);
+    }
+
+    /**
+     * Handles intents from from the Transitions API.
      */
     public class TransitionsReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+
             if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
-                mLogFragment.getLogView()
-                        .println("Received an unsupported action in TransitionsReceiver: action="
-                                + intent.getAction());
+
+                printToScreen("Received an unsupported action in TransitionsReceiver: action = " +
+                        intent.getAction());
                 return;
             }
+
+            // TODO: Extract activity transition information from listener.
             if (ActivityTransitionResult.hasResult(intent)) {
+
                 ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+
                 for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                    String activity = toActivityString(event.getActivityType());
-                    String transitionType = toTransitionType(event.getTransitionType());
-                    mLogFragment.getLogView()
-                            .println("Transition: "
-                                    + activity + " (" + transitionType + ")" + "   "
-                                    + new SimpleDateFormat("HH:mm:ss", Locale.US)
-                                    .format(new Date()));
+
+                    String info = "Transition: " + toActivityString(event.getActivityType()) +
+                            " (" + toTransitionType(event.getTransitionType()) + ")" + "   " +
+                            new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
+
+                    printToScreen(info);
                 }
             }
         }
