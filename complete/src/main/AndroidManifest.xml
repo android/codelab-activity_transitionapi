@@ -15,10 +15,15 @@
   ~ limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.example.android.basicactivityrecognitiontransitionsample"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.google.example.android.basicactivityrecognitiontransitionsample">
 
+    <!-- Required to access activity recognition. -->
+    <!-- TODO: Add both activity recognition permissions to the manifest. -->
+    <!-- Required for 28 and below. -->
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+    <!-- Required for 29+. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <application
         android:allowBackup="true"
@@ -28,6 +33,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity
+            android:name=".PermissionRationalActivity"
+            android:label="@string/title_activity_permission_rational"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name=".MainActivity"
