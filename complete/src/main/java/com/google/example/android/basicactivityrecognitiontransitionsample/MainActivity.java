@@ -138,10 +138,8 @@ public class MainActivity extends AppCompatActivity {
         // The receiver listens for the PendingIntent above that is triggered by the system when an
         // activity transition occurs.
         mTransitionsReceiver = new TransitionsReceiver();
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mTransitionsReceiver,
-                new IntentFilter(TRANSITIONS_RECEIVER_ACTION)
-        );
+
+        registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
 
         printToScreen("App initialized.");
     }
@@ -162,7 +160,9 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: Unregister activity transition receiver when user leaves the app.
         if (mTransitionsReceiver != null) {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(mTransitionsReceiver);
+            //TODO:LocalBroadcastManager.getInstance(this).unregisterReceiver(mTransitionsReceiver);
+            unregisterReceiver(mTransitionsReceiver);
+
             mTransitionsReceiver = null;
         }
         super.onStop();
@@ -181,9 +181,8 @@ public class MainActivity extends AppCompatActivity {
         ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
 
         // Register for Transitions Updates.
-        Task<Void> task =
-                ActivityRecognition.getClient(this)
-                        .requestActivityTransitionUpdates(request, mActivityTransitionsPendingIntent);
+        Task<Void> task = ActivityRecognition.getClient(this)
+                .requestActivityTransitionUpdates(request, mActivityTransitionsPendingIntent);
 
 
         task.addOnSuccessListener(
@@ -283,6 +282,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "onReceive(): " + intent);
 
             if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
 
