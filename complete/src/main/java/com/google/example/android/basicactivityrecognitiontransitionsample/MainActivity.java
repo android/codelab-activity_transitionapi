@@ -160,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: Unregister activity transition receiver when user leaves the app.
         if (mTransitionsReceiver != null) {
-            //TODO:LocalBroadcastManager.getInstance(this).unregisterReceiver(mTransitionsReceiver);
             unregisterReceiver(mTransitionsReceiver);
 
             mTransitionsReceiver = null;
