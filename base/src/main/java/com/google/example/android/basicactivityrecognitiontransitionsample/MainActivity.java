@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickEnableOrDisableActivityRecognition(View view) {
 
         // TODO: Enable/Disable activity tracking and ask for permissions if needed.
-        
+
     }
 
     private void printToScreen(@NonNull String message) {
