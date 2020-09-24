@@ -23,15 +23,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import com.example.android.common.logger.LogFragment;
 import com.google.android.gms.location.ActivityRecognition;
@@ -117,10 +117,18 @@ public class MainActivity extends AppCompatActivity {
         // TODO: Initialize PendingIntent that will be triggered when a activity transition occurs.
 
 
-        // TODO: Create and register a BroadcastReceiver to listen for activity transitions.
+        // TODO: Create a BroadcastReceiver to listen for activity transitions.
 
 
         printToScreen("App initialized.");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // TODO: Register the BroadcastReceiver to listen for activity transitions.
+
     }
 
     @Override
@@ -138,8 +146,17 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: Unregister activity transition receiver when user leaves the app.
 
-
         super.onStop();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        // Start activity recognition if the permission was approved.
+        if (activityRecognitionPermissionApproved() && !activityTrackingEnabled) {
+            enableActivityTransitions();
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
@@ -152,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         // TODO: Create request and listen for activity changes.
+
 
     }
 
@@ -190,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickEnableOrDisableActivityRecognition(View view) {
 
         // TODO: Enable/Disable activity tracking and ask for permissions if needed.
-
+        
     }
 
     private void printToScreen(@NonNull String message) {
@@ -205,6 +223,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "onReceive(): " + intent);
 
             if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
 

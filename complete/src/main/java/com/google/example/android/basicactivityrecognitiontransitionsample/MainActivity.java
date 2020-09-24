@@ -23,15 +23,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import com.example.android.common.logger.LogFragment;
 import com.google.android.gms.location.ActivityRecognition;
@@ -134,14 +135,20 @@ public class MainActivity extends AppCompatActivity {
         mActivityTransitionsPendingIntent =
                 PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
-        // TODO: Create and register a BroadcastReceiver to listen for activity transitions.
+        // TODO: Create a BroadcastReceiver to listen for activity transitions.
         // The receiver listens for the PendingIntent above that is triggered by the system when an
         // activity transition occurs.
         mTransitionsReceiver = new TransitionsReceiver();
 
-        registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
-
         printToScreen("App initialized.");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // TODO: Register the BroadcastReceiver to listen for activity transitions.
+        registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
     }
 
     @Override
@@ -159,12 +166,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
 
         // TODO: Unregister activity transition receiver when user leaves the app.
-        if (mTransitionsReceiver != null) {
-            unregisterReceiver(mTransitionsReceiver);
+        unregisterReceiver(mTransitionsReceiver);
 
-            mTransitionsReceiver = null;
-        }
         super.onStop();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        // Start activity recognition if the permission was approved.
+        if (activityRecognitionPermissionApproved() && !activityTrackingEnabled) {
+            enableActivityTransitions();
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
@@ -183,7 +197,6 @@ public class MainActivity extends AppCompatActivity {
         Task<Void> task = ActivityRecognition.getClient(this)
                 .requestActivityTransitionUpdates(request, mActivityTransitionsPendingIntent);
 
-
         task.addOnSuccessListener(
                 new OnSuccessListener<Void>() {
                     @Override
@@ -193,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+
         task.addOnFailureListener(
                 new OnFailureListener() {
                     @Override
@@ -255,7 +269,6 @@ public class MainActivity extends AppCompatActivity {
         // TODO: Enable/Disable activity tracking and ask for permissions if needed.
         if (activityRecognitionPermissionApproved()) {
 
-            // TODO: Add requests for activity tracking.
             if (activityTrackingEnabled) {
                 disableActivityTransitions();
 
@@ -264,8 +277,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
         } else {
+            // Request permission and start activity for result. If the permission is approved, we
+            // want to make sure we start activity recognition tracking.
             Intent startIntent = new Intent(this, PermissionRationalActivity.class);
-            startActivity(startIntent);
+            startActivityForResult(startIntent, 0);
         }
     }
 
